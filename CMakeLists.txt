@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(simple_chassis_controller)
+project(sentry_chassis_controller)
 
 ## Use C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -18,6 +18,7 @@ find_package(catkin REQUIRED
     hardware_interface
     forward_command_controller
     pluginlib
+    control_toolbox
     )
 
 ###################################
@@ -41,6 +42,7 @@ catkin_package(
     hardware_interface
     forward_command_controller
     pluginlib
+    control_toolbox
     DEPENDS
 )
 

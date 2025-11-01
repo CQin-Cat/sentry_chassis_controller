@@ -2,18 +2,18 @@
 
 ## Overview
 
-This is controller example/template for the assignment (see Chinese [requirement](doc/requirement.md)) which assess
-DynamicX reserve member.
+This is controller package for the DynamicX final assessment (see Chinese [requirement](doc/requirement.md)) 
+in the Season 2026.
 
-**Keywords:** RoboMaster, ROS, ros_control
+**Keywords:** RoboMaster, ROS, ros_control, PID, TF, Odometer
 
 ### License
 
 The source code is released under a [BSD 3-Clause license](LICENSE).
 
-**Author: QiayuanLiao<br />
-Affiliation: [Dynamicx]()<br />
-Maintainer: QiayuanLiao, liaoqiayuan@gmail.com**
+**Author: cqincat<br />
+Affiliation: GDUT()<br />
+Maintainer: cqincat, 2891343933@qq.com**
 
 The simple_chassis_controller package has been tested under [ROS] Noetic on respectively 18.04 and 20.04. This is
 research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
