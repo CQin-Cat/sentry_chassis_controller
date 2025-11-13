@@ -19,8 +19,13 @@
   <depend>forward_command_controller</depend>
   <depend>pluginlib</depend>
   <depend>control_toolbox</depend>
+  <depend>geometry_msgs</depend>
+  <depend>angles</depend>
+  <depend>dynamic_reconfigure</depend>
+  <depend>std_msgs</depend>
+  <depend>eigen3</depend>
 
   <export>
-    <controller_interface plugin="${prefix}/simple_chassis_controller_plugins.xml"/>
+    <controller_interface plugin="${prefix}/sentry_chassis_controller_plugins.xml"/>
   </export>
 </package>

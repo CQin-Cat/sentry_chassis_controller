@@ -19,7 +19,17 @@ find_package(catkin REQUIRED
     forward_command_controller
     pluginlib
     control_toolbox
+    geometry_msgs
+    angles
+    dynamic_reconfigure
+    std_msgs
     )
+
+find_package(Eigen3 REQUIRED)
+
+generate_dynamic_reconfigure_options(
+    cfg/PID.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -60,7 +70,7 @@ include_directories(
 
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
-    src/${PROJECT_NAME}.cpp
+    src/sentry_chassis_controller.cpp
     )
 
 add_dependencies(${PROJECT_NAME}

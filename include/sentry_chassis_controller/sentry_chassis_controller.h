@@ -1,14 +1,25 @@
 //
-// Created by qiayuan on 2/6/21.
+// Created by cqincat on 10/31/25.
 //
 
-#ifndef Sentry_CHASSIS_CONTROLLER_SENTRY_CHASSIS_CONTROLLER_H
-#define Sentry_CHASSIS_CONTROLLER_SENTRY_CHASSIS_CONTROLLER_H
+#ifndef SENTRY_CHASSIS_CONTROLLER_SENTRY_CHASSIS_CONTROLLER_H
+#define SENTRY_CHASSIS_CONTROLLER_SENTRY_CHASSIS_CONTROLLER_H
 
 #include <ros/ros.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <control_toolbox/pid.h>
+#include <geometry_msgs/Twist.h>
+#include <eigen3/Eigen/Dense>
+#include <vector>
+#include <cmath>
+#include <angles/angles.h>
+#include <dynamic_reconfigure/server.h>
+#include <sentry_chassis_controller/PIDConfig.h>
+#include <std_msgs/Float64.h>
+
+template <typename T>
+using Vec2 = typename Eigen::Matrix<T, 2, 1>;
 
 namespace sentry_chassis_controller {
 
@@ -17,19 +28,38 @@ class SentryChassisController : public controller_interface::Controller<hardware
   SentryChassisController() = default;
   ~SentryChassisController() override = default;
 
+ private:
   bool init(hardware_interface::EffortJointInterface *effort_joint_interface,
-            ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
+          ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
 
   void update(const ros::Time &time, const ros::Duration &period) override;
+  void cb(const PIDConfig& config, uint32_t level);
+  void cmd_vel_cb(const geometry_msgs::Twist::ConstPtr& msg);
+  void computeWheelEfforts(const ros::Time& time, const ros::Duration& period);
 
   hardware_interface::JointHandle front_left_pivot_joint_, front_right_pivot_joint_, back_left_pivot_joint_, back_right_pivot_joint_;
-  hardware_interface::JointHandle front_left_wheel_joint_, front_right_wheel_joint_,
-      back_left_wheel_joint_, back_right_wheel_joint_;
- private:
+  hardware_interface::JointHandle front_left_wheel_joint_, front_right_wheel_joint_, back_left_wheel_joint_, back_right_wheel_joint_;
+  ros::Subscriber cmd_vel_sub;
+  std::shared_ptr<dynamic_reconfigure::Server<PIDConfig>> server;
+  dynamic_reconfigure::Server<PIDConfig>::CallbackType cbType;
+  ros::Publisher lf_error_vel_pub,rf_error_vel_pub, lb_error_vel_pub, rb_error_vel_pub;
+
   int state_{};
   ros::Time last_change_;
   double wheel_track_;
   double wheel_base_;
+  double wheel_radius_;
+  double rx, ry;
+  bool odomMode;
+  double left_front_pivot_offset_, right_front_pivot_offset_, left_back_pivot_offset_, right_back_pivot_offset_;
+  double desired_left_front_vel = 0.0;
+  double desired_right_front_vel = 0.0;
+  double desired_left_back_vel = 0.0;
+  double desired_right_back_vel =0.0;
+  double desired_left_front_angle = 0.0;
+  double desired_right_front_angle = 0.0;
+  double desired_left_back_angle = 0.0;
+  double desired_right_back_angle =0.0;
   double pivot_cmd_[4][4];
   double wheel_cmd_[4][4];
   control_toolbox::Pid pid_lf_, pid_rf_, pid_lb_, pid_rb_;

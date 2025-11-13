@@ -1,4 +1,4 @@
-# simple_chassis_controller
+# sentry_chassis_controller
 
 ## Overview
 
