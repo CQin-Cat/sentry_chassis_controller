@@ -24,6 +24,10 @@
   <depend>dynamic_reconfigure</depend>
   <depend>std_msgs</depend>
   <depend>eigen3</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf</depend>
+  <depend>tf2_ros</depend>
 
   <export>
     <controller_interface plugin="${prefix}/sentry_chassis_controller_plugins.xml"/>

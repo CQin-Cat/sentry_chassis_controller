@@ -23,6 +23,10 @@ find_package(catkin REQUIRED
     angles
     dynamic_reconfigure
     std_msgs
+    nav_msgs
+    tf2
+    tf
+    tf2_ros
     )
 
 find_package(Eigen3 REQUIRED)

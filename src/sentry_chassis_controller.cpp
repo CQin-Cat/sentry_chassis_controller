@@ -31,137 +31,94 @@ void SentryChassisController::cb(const PIDConfig& config, uint32_t level)
 //Inverse kinematics solution
 void SentryChassisController::cmd_vel_cb(const geometry_msgs::Twist::ConstPtr& msg)
 {
-    front_left_pivot_joint_.setCommand(0.);
-    front_right_pivot_joint_.setCommand(0.);
-    back_left_pivot_joint_.setCommand(0.);
-    back_right_pivot_joint_.setCommand(0.);
+    Vec2<double> left_front_vel, right_front_vel, left_back_vel, right_back_vel;
+
+    std::vector<Vec2<double>> module_positions = {
+        Vec2<double>(rx, ry),    // left_front
+        Vec2<double>(rx, -ry),   // right_front
+        Vec2<double>(-rx, ry),   // left_back
+        Vec2<double>(-rx, -ry)   // right_back
+    };
 
     if (!odomMode) {
-        Vec2<double> vel_center(msg->linear.x, msg->linear.y);
-        std::vector<Vec2<double>> module_positions = {
-            Vec2<double>(rx, ry),    // left_front
-            Vec2<double>(rx, -ry),   // right_front
-            Vec2<double>(-rx, ry),   // left_back
-            Vec2<double>(-rx, -ry)   // right_back
-        };
-//
-//        Vec2<double> left_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
-//                           msg->angular.z * Vec2<double>(-module_positions[0].y(), module_positions[1].x());
-//        Vec2<double> right_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
-//                           msg->angular.z * Vec2<double>(-module_positions[1].y(), module_positions[1].x());
-//        Vec2<double> left_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
-//                           msg->angular.z * Vec2<double>(-module_positions[2].y(), module_positions[2].x());
-//        Vec2<double> right_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
-//                           msg->angular.z * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
-//        Vec2<double> vel = vel_center + msg->angular.z * Vec2<double>(-ry, rx);
-        Vec2<double> left_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
+        left_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
                                       msg->angular.z * Vec2<double>(-module_positions[0].y(), module_positions[0].x());
-        Vec2<double> right_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
+        right_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
                                        msg->angular.z * Vec2<double>(-module_positions[1].y(), module_positions[1].x());
-        Vec2<double> left_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
+        left_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
                                      msg->angular.z * Vec2<double>(-module_positions[2].y(), module_positions[2].x());
-        Vec2<double> right_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
+        right_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
                                       msg->angular.z * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
-
-        double left_front_vel_angle = std::atan2(left_front_vel.y(), left_front_vel.x()) + left_front_pivot_offset_;
-        double right_front_vel_angle = std::atan2(right_front_vel.y(), right_front_vel.x()) + right_front_pivot_offset_;
-        double left_back_vel_angle = std::atan2(left_back_vel.y(), left_back_vel.x()) + left_back_pivot_offset_;
-        double right_back_vel_angle = std::atan2(right_back_vel.y(), right_back_vel.x()) + right_back_pivot_offset_;
-        ROS_INFO("lf_vel_angle = %.2f",left_front_vel_angle);
-        ROS_INFO("rf_vel_angle = %.2f",right_front_vel_angle);
-        ROS_INFO("lb_vel_angle = %.2f",left_back_vel_angle);
-        ROS_INFO("rb_vel_angle = %.2f",right_back_vel_angle);
-
-        double a = angles::shortest_angular_distance(front_left_pivot_joint_.getPosition(), left_front_vel_angle);
-        double b = angles::shortest_angular_distance(front_left_pivot_joint_.getPosition(), left_front_vel_angle + M_PI);
-        desired_left_front_angle = std::abs(a) < std::abs(b) ? left_front_vel_angle : left_front_vel_angle + M_PI;
-
-        double c = angles::shortest_angular_distance(front_right_pivot_joint_.getPosition(), right_front_vel_angle);
-        double d = angles::shortest_angular_distance(front_right_pivot_joint_.getPosition(), right_front_vel_angle + M_PI);
-        desired_right_front_angle = std::abs(c) < std::abs(d) ? right_front_vel_angle : right_front_vel_angle + M_PI;
-
-        double e = angles::shortest_angular_distance(back_left_pivot_joint_.getPosition(), left_back_vel_angle);
-        double f = angles::shortest_angular_distance(back_left_pivot_joint_.getPosition(), left_back_vel_angle + M_PI);
-        desired_left_back_angle = std::abs(e) < std::abs(f) ? left_back_vel_angle : left_back_vel_angle + M_PI;
-
-        double g = angles::shortest_angular_distance(back_right_pivot_joint_.getPosition(), right_back_vel_angle);
-        double h = angles::shortest_angular_distance(back_right_pivot_joint_.getPosition(), right_back_vel_angle + M_PI);
-        desired_right_back_angle = std::abs(g) < std::abs(h) ? right_back_vel_angle : right_back_vel_angle + M_PI;
-
-//        desired_left_front_vel = left_front_vel.norm() * std::cos(a);
-//        desired_right_front_vel = right_front_vel.norm() * std::cos(c);
-//        desired_left_back_vel = left_back_vel.norm() * std::cos(e);
-//        desired_right_back_vel = right_back_vel.norm()  * std::cos(g);
-
-        desired_left_front_vel = (left_front_vel.x() * cos(desired_left_front_angle) +
-                                  left_front_vel.y() * sin(desired_left_front_angle)) / wheel_radius_;
-        desired_right_front_vel = (right_front_vel.x() * cos(desired_right_front_angle) +
-                                   right_front_vel.y() * sin(desired_right_front_angle)) / wheel_radius_;
-        desired_left_back_vel = (left_back_vel.x() * cos(desired_left_back_angle) +
-                                 left_back_vel.y() * sin(desired_left_back_angle)) / wheel_radius_;
-        desired_right_back_vel = (right_back_vel.x() * cos(desired_right_back_angle) +
-                                  right_back_vel.y() * sin(desired_right_back_angle)) / wheel_radius_;
-
     } else{
-//        geometry_msgs::Vector3Stamped world_vel;
-//        world_vel.header.stamp = ros::Time(0);
-//        world_vel.header.frame_id = "odom";
-//        world_vel.vector = msg->linear;
-//
-//        geometry_msgs::Vector3Stamped base_vel;
-//        try {
-//            tf_listener_.waitForTransform("base_link","odom",ros::Time(0),ros::Duration(1.0));
-//            tf_listener_.transformVector("base_link", world_vel, base_vel); // 使用成员 tf listener
-//        } catch (tf::TransformException& ex) {
-//            ROS_WARN("tf error: %s", ex.what());
-//            return;
-//        }
-//        desired_front_left_velocity_  = base_vel.vector.x - base_vel.vector.y - (rx + ry) * msg->angular.z;
-//        desired_front_right_velocity_  = base_vel.vector.x + base_vel.vector.y + (rx + ry) * msg->angular.z;
-//        desired_back_left_velocity_  = base_vel.vector.x + base_vel.vector.y - (rx + ry) * msg->angular.z;
-//        desired_back_right_velocity_  = base_vel.vector.x - base_vel.vector.y + (rx + ry) * msg->angular.z;
+        geometry_msgs::Vector3Stamped world_vel;
+        world_vel.header.stamp = ros::Time(0);
+        world_vel.header.frame_id = "odom";
+        world_vel.vector = msg->linear;
+
+        geometry_msgs::Vector3Stamped base_vel;
+        try {
+            tf_listener_.waitForTransform("base_link","odom",ros::Time(0),ros::Duration(1.0));
+            tf_listener_.transformVector("base_link", world_vel, base_vel); // 使用成员 tf listener
+        } catch (tf::TransformException& ex) {
+            ROS_WARN("tf error: %s", ex.what());
+            return;
+        }
+        left_front_vel = Vec2<double>(base_vel.vector.x, base_vel.vector.y) +
+                                      msg->angular.z * Vec2<double>(-module_positions[0].y(), module_positions[0].x());
+        right_front_vel = Vec2<double>(base_vel.vector.x, base_vel.vector.y) +
+                                       msg->angular.z * Vec2<double>(-module_positions[1].y(), module_positions[1].x());
+        left_back_vel = Vec2<double>(base_vel.vector.x, base_vel.vector.y) +
+                                     msg->angular.z * Vec2<double>(-module_positions[2].y(), module_positions[2].x());
+        right_back_vel = Vec2<double>(base_vel.vector.x, base_vel.vector.y) +
+                                      msg->angular.z * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
     }
+
+    double left_front_vel_angle = std::atan2(left_front_vel.y(), left_front_vel.x()) + left_front_pivot_offset_;
+    double right_front_vel_angle = std::atan2(right_front_vel.y(), right_front_vel.x()) + right_front_pivot_offset_;
+    double left_back_vel_angle = std::atan2(left_back_vel.y(), left_back_vel.x()) + left_back_pivot_offset_;
+    double right_back_vel_angle = std::atan2(right_back_vel.y(), right_back_vel.x()) + right_back_pivot_offset_;
+
+    double a = angles::shortest_angular_distance(front_left_pivot_joint_.getPosition(), left_front_vel_angle);
+    double b = angles::shortest_angular_distance(front_left_pivot_joint_.getPosition(), left_front_vel_angle + M_PI);
+    desired_left_front_angle = std::abs(a) < std::abs(b) ? left_front_vel_angle : left_front_vel_angle + M_PI;
+
+    double c = angles::shortest_angular_distance(front_right_pivot_joint_.getPosition(), right_front_vel_angle);
+    double d = angles::shortest_angular_distance(front_right_pivot_joint_.getPosition(), right_front_vel_angle + M_PI);
+    desired_right_front_angle = std::abs(c) < std::abs(d) ? right_front_vel_angle : right_front_vel_angle + M_PI;
+
+    double e = angles::shortest_angular_distance(back_left_pivot_joint_.getPosition(), left_back_vel_angle);
+    double f = angles::shortest_angular_distance(back_left_pivot_joint_.getPosition(), left_back_vel_angle + M_PI);
+    desired_left_back_angle = std::abs(e) < std::abs(f) ? left_back_vel_angle : left_back_vel_angle + M_PI;
+
+    double g = angles::shortest_angular_distance(back_right_pivot_joint_.getPosition(), right_back_vel_angle);
+    double h = angles::shortest_angular_distance(back_right_pivot_joint_.getPosition(), right_back_vel_angle + M_PI);
+    desired_right_back_angle = std::abs(g) < std::abs(h) ? right_back_vel_angle : right_back_vel_angle + M_PI;
+
+    desired_left_front_vel = left_front_vel.norm() * std::cos(a) / wheel_radius_;
+    desired_right_front_vel = right_front_vel.norm() * std::cos(c) / wheel_radius_;
+    desired_left_back_vel = left_back_vel.norm() * std::cos(e) / wheel_radius_;
+    desired_right_back_vel = right_back_vel.norm()  * std::cos(g) / wheel_radius_;
 }
 
 void SentryChassisController::computeWheelEfforts(const ros::Time& time, const ros::Duration& period)
 {
-    double actual_front_left_vel = front_left_wheel_joint_.getVelocity();
-    double actual_front_right_vel = front_right_wheel_joint_.getVelocity();
-    double actual_back_left_vel = back_left_wheel_joint_.getVelocity();
-    double actual_back_right_vel = back_right_wheel_joint_.getVelocity();
-    double actual_front_left_pos = front_left_pivot_joint_.getPosition();
-    double actual_front_right_pos = front_right_pivot_joint_.getPosition();
-    double actual_back_left_pos = back_left_pivot_joint_.getPosition();
-    double actual_back_right_pos = back_right_pivot_joint_.getPosition();
+    actual_front_left_vel = front_left_wheel_joint_.getVelocity();
+    actual_front_right_vel = front_right_wheel_joint_.getVelocity();
+    actual_back_left_vel = back_left_wheel_joint_.getVelocity();
+    actual_back_right_vel = back_right_wheel_joint_.getVelocity();
+    actual_front_left_pos = front_left_pivot_joint_.getPosition();
+    actual_front_right_pos = front_right_pivot_joint_.getPosition();
+    actual_back_left_pos = back_left_pivot_joint_.getPosition();
+    actual_back_right_pos = back_right_pivot_joint_.getPosition();
 
-    double error_front_left_vel =desired_left_front_vel - wheel_radius_ * actual_front_left_vel;
-    double error_front_right_vel =desired_right_front_vel - wheel_radius_ * actual_front_right_vel;
-    double error_back_left_vel =desired_left_back_vel - wheel_radius_ * actual_back_left_vel;
-    double error_back_right_vel =desired_right_back_vel - wheel_radius_ * actual_back_right_vel;
+    double error_front_left_vel =desired_left_front_vel -  actual_front_left_vel;
+    double error_front_right_vel =desired_right_front_vel -  actual_front_right_vel;
+    double error_back_left_vel =desired_left_back_vel -  actual_back_left_vel;
+    double error_back_right_vel =desired_right_back_vel -  actual_back_right_vel;
     double error_front_left_angle = desired_left_front_angle - actual_front_left_pos;
     double error_front_right_angle = desired_right_front_angle - actual_front_right_pos;
     double error_back_left_angle = desired_left_back_angle - actual_back_left_pos;
     double error_back_right_angle = desired_right_back_angle - actual_back_right_pos;
-    if (lf_error_vel_pub) {
-        std_msgs::Float64 m;
-        m.data = error_front_left_vel;
-        lf_error_vel_pub.publish(m);
-    }
-    if (rf_error_vel_pub) {
-        std_msgs::Float64 m;
-        m.data = error_front_right_vel;
-        rf_error_vel_pub.publish(m);
-    }
-    if (lb_error_vel_pub) {
-        std_msgs::Float64 m;
-        m.data = error_back_left_vel;
-        lb_error_vel_pub.publish(m);
-    }
-    if (rb_error_vel_pub) {
-        std_msgs::Float64 m;
-        m.data = error_back_right_vel;
-        rb_error_vel_pub.publish(m);
-    }
 
     double cmd_effort_front_left = pid_lf_wheel_.computeCommand(error_front_left_vel, period);
     double cmd_effort_front_right = pid_rf_wheel_.computeCommand(error_front_right_vel, period);
@@ -200,6 +157,83 @@ void SentryChassisController::computeWheelEfforts(const ros::Time& time, const r
 //    for (auto joint : joint_handles_)
 //        joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
 }
+//Forward kinematics calculation
+    void SentryChassisController::odom_update(const ros::Time& time, const ros::Duration& period)
+    {
+        //Forward kinematics calculation
+        actual_front_left_vel = front_left_wheel_joint_.getVelocity();
+        actual_front_right_vel = front_right_wheel_joint_.getVelocity();
+        actual_back_left_vel = back_left_wheel_joint_.getVelocity();
+        actual_back_right_vel = back_right_wheel_joint_.getVelocity();
+        actual_front_left_pos = front_left_pivot_joint_.getPosition();
+        actual_front_right_pos = front_right_pivot_joint_.getPosition();
+        actual_back_left_pos = back_left_pivot_joint_.getPosition();
+        actual_back_right_pos = back_right_pivot_joint_.getPosition();
+
+        double x_velocity = (actual_front_left_vel * cos(actual_front_left_pos) +
+                            actual_front_right_vel * cos(actual_front_right_pos)+
+                            actual_back_left_vel * cos(actual_back_left_pos) +
+                            actual_back_right_vel * cos(actual_back_right_pos)) * wheel_radius_ / 4;
+        double y_velocity = (actual_front_left_vel * sin(actual_front_left_pos) +
+                            actual_front_right_vel * sin(actual_front_right_pos)+
+                            actual_back_left_vel * sin(actual_back_left_pos) +
+                            actual_back_right_vel * sin(actual_back_right_pos)) * wheel_radius_ / 4;
+        double th_velocity = (- actual_front_left_vel * cos(actual_front_left_pos) + actual_front_left_vel * sin(actual_front_left_pos)
+                            + actual_front_right_vel * cos(actual_front_right_pos) + actual_front_right_vel * sin(actual_front_right_pos)
+                            - actual_back_left_vel * cos(actual_back_left_pos) - actual_back_left_vel * sin(actual_back_left_pos)
+                            + actual_back_right_vel * cos(actual_back_right_pos) - actual_back_right_vel * sin(actual_back_right_pos))
+                            * sqrt(2) /2 / sqrt((wheel_track_ * wheel_track_)/4 + (wheel_base_ * wheel_base_)/4) * wheel_radius_ / 4;
+
+        dt = period.toSec();
+        dx = (x_velocity * cos(th) - y_velocity * sin(th)) * dt;
+        dy = (x_velocity * sin(th) + y_velocity * cos(th)) * dt;
+        dth = th_velocity * dt;
+        // 里程计累加
+        x += dx;
+        y += dy;
+        th += dth;
+        while (th > M_PI) th -= 2.0 * M_PI;
+        while (th < -M_PI) th += 2.0 * M_PI;
+
+        // 创建坐标转换
+        geometry_msgs::TransformStamped odom_ts;
+        //----设置头信息
+        //odom_ts.header.seq = 100;
+        odom_ts.header.stamp = time;
+        odom_ts.header.frame_id = "odom";
+        //----设置子级坐标系
+        odom_ts.child_frame_id = "base_link";
+        //----设置子级相对于父级的偏移量
+        odom_ts.transform.translation.x = x;
+        odom_ts.transform.translation.y = y;
+        odom_ts.transform.translation.z = 0.0;
+        //----设置四元数:将 欧拉角数据转换成四元数
+        tf2::Quaternion qtn;
+        qtn.setRPY(0,0,th);
+        odom_ts.transform.rotation.x = qtn.getX();
+        odom_ts.transform.rotation.y = qtn.getY();
+        odom_ts.transform.rotation.z = qtn.getZ();
+        odom_ts.transform.rotation.w = qtn.getW();
+
+        odom_broadcaster.sendTransform(odom_ts);
+
+        // 发布 Odometry 消息
+        nav_msgs::Odometry odom;
+        odom.header.stamp = time;
+        odom.header.frame_id = "odom";
+
+        odom.pose.pose.position.x = x;
+        odom.pose.pose.position.y = y;
+        odom.pose.pose.position.z = 0.0;
+        odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(th);;
+
+        odom.child_frame_id = "base_link";
+        odom.twist.twist.linear.x = x_velocity;
+        odom.twist.twist.linear.y = y_velocity;
+        odom.twist.twist.angular.z = th_velocity;
+
+        odom_pub.publish(odom);
+    }
 
 bool SentryChassisController::init(hardware_interface::EffortJointInterface *effort_joint_interface,
                                    ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) {
@@ -221,6 +255,11 @@ bool SentryChassisController::init(hardware_interface::EffortJointInterface *eff
       effort_joint_interface->getHandle("left_back_pivot_joint");
   back_right_pivot_joint_ =
       effort_joint_interface->getHandle("right_back_pivot_joint");
+
+  front_left_pivot_joint_.setCommand(0.);
+  front_right_pivot_joint_.setCommand(0.);
+  back_left_pivot_joint_.setCommand(0.);
+  back_right_pivot_joint_.setCommand(0.);
 
 //  wheel_track_ = controller_nh.param("wheel_track", 0.362);
 //  wheel_base_ = controller_nh.param("wheel_base", 0.362);
@@ -249,6 +288,7 @@ bool SentryChassisController::init(hardware_interface::EffortJointInterface *eff
 
   //subscribe the velocity command
   cmd_vel_sub = root_nh.subscribe("/cmd_vel", 1, &SentryChassisController::cmd_vel_cb, this);
+  odom_pub = root_nh.advertise<nav_msgs::Odometry>("odom", 10);
 
   lf_error_vel_pub = root_nh.advertise<std_msgs::Float64>("/error_vel/lf", 10);
   rf_error_vel_pub = root_nh.advertise<std_msgs::Float64>("/error_vel/rf", 10);
@@ -266,6 +306,7 @@ bool SentryChassisController::init(hardware_interface::EffortJointInterface *eff
 
 void SentryChassisController::update(const ros::Time &time, const ros::Duration &period) {
     computeWheelEfforts(time, period);
+    odom_update(time, period);
 }
 
 PLUGINLIB_EXPORT_CLASS(sentry_chassis_controller::SentryChassisController, controller_interface::ControllerBase)
