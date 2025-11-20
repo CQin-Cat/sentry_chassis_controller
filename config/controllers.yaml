@@ -6,10 +6,10 @@ controller:
     wheel_track: 0.362
     wheel_base: 0.362
     wheel_radius: 0.055
-    left_front_pivot_offset:  0 #2.340
-    right_front_pivot_offset: 0 #-0.285
-    left_back_pivot_offset: 0 #-0.259
-    right_back_pivot_offset: 0 #2.330
+#    left_front_pivot_offset:  2.340
+#    right_front_pivot_offset: -0.285
+#    left_back_pivot_offset: -0.259
+#    right_back_pivot_offset: 2.330
 
   joint_state_controller:
     type: joint_state_controller/JointStateController

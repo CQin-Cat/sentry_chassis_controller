@@ -19,11 +19,16 @@
 #include <std_msgs/Float64.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
+
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 template <typename T>
 using Vec2 = typename Eigen::Matrix<T, 2, 1>;
@@ -32,7 +37,7 @@ namespace sentry_chassis_controller {
 
 class SentryChassisController : public controller_interface::Controller<hardware_interface::EffortJointInterface> {
  public:
-  SentryChassisController() = default;
+  SentryChassisController() = default ;
   ~SentryChassisController() override = default;
 
  private:
@@ -54,7 +59,10 @@ class SentryChassisController : public controller_interface::Controller<hardware
   ros::Publisher odom_pub;
   tf2_ros::TransformBroadcaster odom_broadcaster;
   tf::TransformListener tf_listener_;
-
+    tf2_ros::Buffer buffer;
+    std::shared_ptr<tf2_ros::TransformListener> listener;
+//    tf2_ros::Buffer tf_buffer_;
+//    tf2_ros::TransformListener tf_listener_;
 
   ros::Time last_change_;
   double wheel_track_;
@@ -63,7 +71,7 @@ class SentryChassisController : public controller_interface::Controller<hardware
   double rx, ry;
   bool odomMode;
 
-  double left_front_pivot_offset_, right_front_pivot_offset_, left_back_pivot_offset_, right_back_pivot_offset_;
+//  double left_front_pivot_offset_, right_front_pivot_offset_, left_back_pivot_offset_, right_back_pivot_offset_;
   double desired_left_front_vel = 0.0;
   double desired_right_front_vel = 0.0;
   double desired_left_back_vel = 0.0;
@@ -80,8 +88,7 @@ class SentryChassisController : public controller_interface::Controller<hardware
   double actual_front_right_pos = 0;
   double actual_back_left_pos = 0;
   double actual_back_right_pos = 0;
-  double pivot_cmd_[4][4];
-  double wheel_cmd_[4][4];
+
   control_toolbox::Pid pid_lf_, pid_rf_, pid_lb_, pid_rb_;
   control_toolbox::Pid pid_lf_wheel_, pid_rf_wheel_, pid_lb_wheel_, pid_rb_wheel_;
 
