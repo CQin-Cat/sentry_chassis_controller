@@ -94,7 +94,7 @@ class SentryChassisController : public controller_interface::Controller<hardware
 
   double x = 0.0;
   double y = 0.0;
-  double th = 0.0;
+  double th = M_PI;
   double dt = 0.0;
   double dx = 0.0;
   double dy = 0.0;

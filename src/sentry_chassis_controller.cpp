@@ -56,15 +56,27 @@ void SentryChassisController::cmd_vel_cb(const geometry_msgs::Twist::ConstPtr& m
         right_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
                                       msg->angular.z * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
     } else{
-        geometry_msgs::Vector3Stamped world_vel;
-        world_vel.header.stamp = ros::Time::now();
-        world_vel.header.frame_id = "odom";
-        world_vel.vector = msg->linear;
-
+//        geometry_msgs::Vector3Stamped world_vel;
+//        world_vel.header.stamp = ros::Time(0);
+//        world_vel.header.frame_id = "map";
+//        world_vel.vector = msg->linear;
+//
+//        try {
+//            tf_listener_.waitForTransform("base_link","odom",ros::Time(0),ros::Duration(0.5));
+//            tf_listener_.transformVector("base_link", world_vel, odom_vel); // 使用成员 tf listener
+//        } catch (tf::TransformException& ex) {
+//            ROS_WARN("tf error: %s", ex.what());
+//            return;
+//        }
+        geometry_msgs::Vector3Stamped odom_vel;
+        odom_vel.header.stamp = ros::Time(0);
+        odom_vel.header.frame_id = "base_link";
+        odom_vel.vector = msg->linear;
         geometry_msgs::Vector3Stamped base_vel;
         try {
-            tf_listener_.waitForTransform("base_link","odom",ros::Time::now(),ros::Duration(1.0));
-            tf_listener_.transformVector("base_link", world_vel, base_vel); // 使用成员 tf listener
+            tf_listener_.waitForTransform("odom","base_link",ros::Time(0),ros::Duration(0.5));
+//            tf_listener_.transformVector("odom", odom_vel, base_vel); // 使用成员 tf listener
+            tf_listener_.transformVector("odom", ros::Time(0), odom_vel, "base_link", base_vel);
         } catch (tf::TransformException& ex) {
             ROS_WARN("tf error: %s", ex.what());
             return;
@@ -236,8 +248,28 @@ void SentryChassisController::computeWheelEfforts(const ros::Time& time, const r
         x += dx;
         y += dy;
         th += dth;
-        while (th > M_PI) th -= 2.0 * M_PI;
-        while (th < -M_PI) th += 2.0 * M_PI;
+
+        // 创建坐标转换(map版)
+//        geometry_msgs::TransformStamped map2odom;
+//        //----设置头信息
+//        //odom_ts.header.seq = 100;
+//        map2odom.header.stamp = time;
+//        map2odom.header.frame_id = "odom";
+//        //----设置子级坐标系
+//        map2odom.child_frame_id = "base_link";
+//        //----设置子级相对于父级的偏移量
+//        map2odom.transform.translation.x = x;
+//        map2odom.transform.translation.y = y;
+//        map2odom.transform.translation.z = 0.0;
+//        //----设置四元数:将 欧拉角数据转换成四元数
+//        tf2::Quaternion qtn;
+//        qtn.setRPY(0,0,th);
+//        map2odom.transform.rotation.x = qtn.getX();
+//        map2odom.transform.rotation.y = qtn.getY();
+//        map2odom.transform.rotation.z = qtn.getZ();
+//        map2odom.transform.rotation.w = qtn.getW();
+//
+//        odom_broadcaster.sendTransform(map2odom);
 
         // 创建坐标转换
         geometry_msgs::TransformStamped odom2base_link;
@@ -251,7 +283,7 @@ void SentryChassisController::computeWheelEfforts(const ros::Time& time, const r
         odom2base_link.transform.translation.x = x;
         odom2base_link.transform.translation.y = y;
         odom2base_link.transform.translation.z = 0.0;
-        //----设置四元数:将 欧拉角数据转换成四元数
+//        //----设置四元数:将 欧拉角数据转换成四元数
         tf2::Quaternion qtn;
         qtn.setRPY(0,0,th);
         odom2base_link.transform.rotation.x = qtn.getX();
