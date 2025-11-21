@@ -37,8 +37,8 @@ To build from source, clone the latest version from this repository into your ca
 using
 
 	cd catkin_workspace/src
-	git clone git@github.com:gdut-dynamic-x/simple_chassis_controller.git
-    # git clone https://github.com/gdut-dynamic-x/simple_chassis_controller.git
+	git clone git@github.com:CQin-Cat/sentry_chassis_controller.git
+    # git clone https://github.com/CQin-Cat/sentry_chassis_controller.git
 	cd ../
 	rosdep install --from-paths . --ignore-src
 	catkin build
@@ -51,13 +51,17 @@ Run the simulation and controller with:
 
 ## Config files
 
-Config file config
+### Config folder /cfg
 
-* **controllers.yaml**  Params of simple_chassis_controller and joint_state_controller.
+- **PID.cfg**   Configuration file for PID parameters.
+
+### Config folder /config
+
+- **controllers.yaml**   Params of sentry_chassis_controller and joint_state_controller.
 
 ## Launch files
 
-* **run_simulation_and_controller.launch:** Hero chassis only simulation and simple chassis controller
+* **run_simulation_and_controller.launch:** Sentry chassis only simulation and simple chassis controller
 
 ## Bugs & Feature Requests
 

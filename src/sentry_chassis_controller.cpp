@@ -190,7 +190,7 @@ void SentryChassisController::computeWheelEfforts(const ros::Time& time, const r
     back_left_wheel_joint_.setCommand(cmd_effort_back_left);
     back_right_wheel_joint_.setCommand(cmd_effort_back_right);
 
-
+//    功率控制
 //    double a = 0., b = 0., c = 0.;
 //    a = square(cmd_effort_front_left_)+square(cmd_effort_front_right_)+square(cmd_effort_back_left_)+square(cmd_effort_back_right_);
 //    b = std::abs(cmd_effort_front_left_ * actual_front_left_velocity_)+std::abs(cmd_effort_front_right_ * actual_front_right_velocity_)+

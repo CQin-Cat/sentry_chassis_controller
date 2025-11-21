@@ -4,7 +4,7 @@ controller:
     #when true, it is global coordinate system mode, otherwise it is the chassis coordinate system mode.
     odomMode: true
     spinMode: false
-    lockMode: true
+    lockMode: false
     wheel_track: 0.362
     wheel_base: 0.362
     wheel_radius: 0.055
