@@ -7,11 +7,6 @@
 #include <pluginlib/class_list_macros.hpp>
 
 namespace sentry_chassis_controller {
-//SentryChassisController::SentryChassisController() :
-//    tf_buffer_(ros::Duration(10.0)),      // 初始化缓冲区（10秒缓存）
-//    tf_listener_(tf_buffer_)              // 初始化监听器，传入缓冲区引用
-//{
-//}
 
 void SentryChassisController::cb(const PIDConfig& config, uint32_t level)
 {
@@ -40,63 +35,53 @@ void SentryChassisController::cmd_vel_cb(const geometry_msgs::Twist::ConstPtr& m
     Vec2<double> left_front_vel, right_front_vel, left_back_vel, right_back_vel;
 
     std::vector<Vec2<double>> module_positions = {
-        Vec2<double>(rx, ry),    // left_front
-        Vec2<double>(rx, -ry),   // right_front
-        Vec2<double>(-rx, ry),   // left_back
-        Vec2<double>(-rx, -ry)   // right_back
+        Vec2<double>(rx, ry),    //left_front
+        Vec2<double>(rx, -ry),   //right_front
+        Vec2<double>(-rx, ry),   //left_back
+        Vec2<double>(-rx, -ry)   //right_back
     };
 
     if (!odomMode) {
-        left_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
-                                      msg->angular.z * Vec2<double>(-module_positions[0].y(), module_positions[0].x());
-        right_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
-                                       msg->angular.z * Vec2<double>(-module_positions[1].y(), module_positions[1].x());
-        left_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
-                                     msg->angular.z * Vec2<double>(-module_positions[2].y(), module_positions[2].x());
-        right_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
-                                      msg->angular.z * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
+        //小陀螺模式
+        if(spinMode) {
+            double act[3] = {msg->linear.x, msg->linear.y, msg->angular.z};
+            double base[3] = {0};
+            base[0] = act[0] * cos(yaw) - act[1] * sin(yaw);  //x方向
+            base[1] = act[0] * sin(yaw) + act[1] * cos(yaw);  //y方向
+            base[2] = act[2] + (abs(act[0]) + abs(act[1])) * 2.0;  //角速度
+            left_front_vel = Vec2<double>(base[0], base[1]) +
+                            base[2] * Vec2<double>(-module_positions[0].y(), module_positions[0].x());
+            right_front_vel = Vec2<double>(base[0], base[1]) +
+                            base[2] * Vec2<double>(-module_positions[1].y(), module_positions[1].x());
+            left_back_vel = Vec2<double>(base[0], base[1]) +
+                            base[2] * Vec2<double>(-module_positions[2].y(), module_positions[2].x());
+            right_back_vel = Vec2<double>(base[0], base[1]) +
+                            base[2] * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
+
+        }else {
+            left_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
+                             msg->angular.z * Vec2<double>(-module_positions[0].y(), module_positions[0].x());
+            right_front_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
+                              msg->angular.z * Vec2<double>(-module_positions[1].y(), module_positions[1].x());
+            left_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
+                            msg->angular.z * Vec2<double>(-module_positions[2].y(), module_positions[2].x());
+            right_back_vel = Vec2<double>(msg->linear.x, msg->linear.y) +
+                             msg->angular.z * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
+        }
     } else{
-//        geometry_msgs::Vector3Stamped world_vel;
-//        world_vel.header.stamp = ros::Time(0);
-//        world_vel.header.frame_id = "map";
-//        world_vel.vector = msg->linear;
-//
-//        try {
-//            tf_listener_.waitForTransform("base_link","odom",ros::Time(0),ros::Duration(0.5));
-//            tf_listener_.transformVector("base_link", world_vel, odom_vel); // 使用成员 tf listener
-//        } catch (tf::TransformException& ex) {
-//            ROS_WARN("tf error: %s", ex.what());
-//            return;
-//        }
         geometry_msgs::Vector3Stamped odom_vel;
         odom_vel.header.stamp = ros::Time(0);
-        odom_vel.header.frame_id = "base_link";
+        odom_vel.header.frame_id = "odom";
         odom_vel.vector = msg->linear;
         geometry_msgs::Vector3Stamped base_vel;
         try {
-            tf_listener_.waitForTransform("odom","base_link",ros::Time(0),ros::Duration(0.5));
-//            tf_listener_.transformVector("odom", odom_vel, base_vel); // 使用成员 tf listener
-            tf_listener_.transformVector("odom", ros::Time(0), odom_vel, "base_link", base_vel);
+//            tf_listener_.waitForTransform("base_link","odom",ros::Time(0),ros::Duration(0.5));
+            tf_listener_.transformVector("base_link", odom_vel, base_vel);
+//            tf_listener_.transformVector("odom", ros::Time(0), odom_vel, "base_link", base_vel);
         } catch (tf::TransformException& ex) {
             ROS_WARN("tf error: %s", ex.what());
             return;
         }
-
-//        geometry_msgs::TwistStamped world_vel, base_vel;
-//        world_vel.header.frame_id = "odom";
-//        world_vel.header.stamp = ros::Time(0);
-//        world_vel.twist.linear = msg->linear;
-//        world_vel.twist.angular = msg->angular;
-//        try
-//        {
-//            auto transform = buffer.lookupTransform("base_link", "odom", ros::Time(0), ros::Duration(0.5));
-//            tf2::doTransform(world_vel, base_vel, transform);
-//        }
-//        catch (tf2::TransformException& ex)
-//        {
-//            ROS_WARN("%s", ex.what());
-//            return;
-//        }
         left_front_vel = Vec2<double>(base_vel.vector.x, base_vel.vector.y) +
                                       msg->angular.z * Vec2<double>(-module_positions[0].y(), module_positions[0].x());
         right_front_vel = Vec2<double>(base_vel.vector.x, base_vel.vector.y) +
@@ -105,14 +90,6 @@ void SentryChassisController::cmd_vel_cb(const geometry_msgs::Twist::ConstPtr& m
                                      msg->angular.z * Vec2<double>(-module_positions[2].y(), module_positions[2].x());
         right_back_vel = Vec2<double>(base_vel.vector.x, base_vel.vector.y) +
                                       msg->angular.z * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
-//        left_front_vel = Vec2<double>(base_vel.twist.linear.x, base_vel.twist.linear.y) +
-//                                        base_vel.twist.angular.z * Vec2<double>(-module_positions[0].y(), module_positions[0].x());
-//        right_front_vel = Vec2<double>(base_vel.twist.linear.x, base_vel.twist.linear.y) +
-//                                        base_vel.twist.angular.z * Vec2<double>(-module_positions[1].y(), module_positions[1].x());
-//        left_back_vel = Vec2<double>(base_vel.twist.linear.x, base_vel.twist.linear.y) +
-//                                        base_vel.twist.angular.z * Vec2<double>(-module_positions[2].y(), module_positions[2].x());
-//        right_back_vel = Vec2<double>(base_vel.twist.linear.x, base_vel.twist.linear.y) +
-//                                        base_vel.twist.angular.z * Vec2<double>(-module_positions[3].y(), module_positions[3].x());
     }
 
     double left_front_vel_angle = std::atan2(left_front_vel.y(), left_front_vel.x());
@@ -121,23 +98,23 @@ void SentryChassisController::cmd_vel_cb(const geometry_msgs::Twist::ConstPtr& m
     double right_back_vel_angle = std::atan2(right_back_vel.y(), right_back_vel.x());
 
     double a = angles::shortest_angular_distance(front_left_pivot_joint_.getPosition(), left_front_vel_angle);
-//    double b = angles::shortest_angular_distance(front_left_pivot_joint_.getPosition(), left_front_vel_angle + M_PI);
-//    desired_left_front_angle = std::abs(a) < std::abs(b) ? left_front_vel_angle : left_front_vel_angle + M_PI;
+    double b = angles::shortest_angular_distance(front_left_pivot_joint_.getPosition(), left_front_vel_angle + M_PI);
+    desired_left_front_angle = std::abs(a) < std::abs(b) ? left_front_vel_angle : left_front_vel_angle + M_PI;
     desired_left_front_angle = left_front_vel_angle;
 
     double c = angles::shortest_angular_distance(front_right_pivot_joint_.getPosition(), right_front_vel_angle);
-//    double d = angles::shortest_angular_distance(front_right_pivot_joint_.getPosition(), right_front_vel_angle + M_PI);
-//    desired_right_front_angle = std::abs(c) < std::abs(d) ? right_front_vel_angle : right_front_vel_angle + M_PI;
+    double d = angles::shortest_angular_distance(front_right_pivot_joint_.getPosition(), right_front_vel_angle + M_PI);
+    desired_right_front_angle = std::abs(c) < std::abs(d) ? right_front_vel_angle : right_front_vel_angle + M_PI;
     desired_right_front_angle = right_front_vel_angle;
 
     double e = angles::shortest_angular_distance(back_left_pivot_joint_.getPosition(), left_back_vel_angle);
-//    double f = angles::shortest_angular_distance(back_left_pivot_joint_.getPosition(), left_back_vel_angle + M_PI);
-//    desired_left_back_angle = std::abs(e) < std::abs(f) ? left_back_vel_angle : left_back_vel_angle + M_PI;
+    double f = angles::shortest_angular_distance(back_left_pivot_joint_.getPosition(), left_back_vel_angle + M_PI);
+    desired_left_back_angle = std::abs(e) < std::abs(f) ? left_back_vel_angle : left_back_vel_angle + M_PI;
     desired_left_back_angle = left_back_vel_angle;
 
     double g = angles::shortest_angular_distance(back_right_pivot_joint_.getPosition(), right_back_vel_angle);
-//    double h = angles::shortest_angular_distance(back_right_pivot_joint_.getPosition(), right_back_vel_angle + M_PI);
-//    desired_right_back_angle = std::abs(g) < std::abs(h) ? right_back_vel_angle : right_back_vel_angle + M_PI;
+    double h = angles::shortest_angular_distance(back_right_pivot_joint_.getPosition(), right_back_vel_angle + M_PI);
+    desired_right_back_angle = std::abs(g) < std::abs(h) ? right_back_vel_angle : right_back_vel_angle + M_PI;
     desired_right_back_angle = right_back_vel_angle;
 
     desired_left_front_vel = left_front_vel.norm() * std::cos(a) / wheel_radius_;
@@ -145,6 +122,20 @@ void SentryChassisController::cmd_vel_cb(const geometry_msgs::Twist::ConstPtr& m
     desired_left_back_vel = left_back_vel.norm() * std::cos(e) / wheel_radius_;
     desired_right_back_vel = right_back_vel.norm()  * std::cos(g) / wheel_radius_;
 
+    last_cmd_vel_time_ = ros::Time::now();
+}
+void SentryChassisController::lock_chassis(const ros::Time& time){
+    if((ros::Time::now() - last_cmd_vel_time_).toSec() > cmd_vel_timeout_){
+        desired_left_front_vel = 0.0;
+        desired_right_front_vel = 0.0;
+        desired_left_back_vel = 0.0;
+        desired_right_back_vel = 0.0;
+
+        desired_left_front_angle = -0.785;
+        desired_right_front_angle = 0.785;
+        desired_left_back_angle = 0.785;
+        desired_right_back_angle = -0.785;
+    }
 }
 
 void SentryChassisController::computeWheelEfforts(const ros::Time& time, const ros::Duration& period)
@@ -244,56 +235,53 @@ void SentryChassisController::computeWheelEfforts(const ros::Time& time, const r
         dx = (x_velocity * cos(th) - y_velocity * sin(th)) * dt;
         dy = (x_velocity * sin(th) + y_velocity * cos(th)) * dt;
         dth = th_velocity * dt;
-        // 里程计累加
+
         x += dx;
         y += dy;
         th += dth;
 
-        // 创建坐标转换(map版)
-//        geometry_msgs::TransformStamped map2odom;
-//        //----设置头信息
-//        //odom_ts.header.seq = 100;
-//        map2odom.header.stamp = time;
-//        map2odom.header.frame_id = "odom";
-//        //----设置子级坐标系
-//        map2odom.child_frame_id = "base_link";
-//        //----设置子级相对于父级的偏移量
-//        map2odom.transform.translation.x = x;
-//        map2odom.transform.translation.y = y;
-//        map2odom.transform.translation.z = 0.0;
-//        //----设置四元数:将 欧拉角数据转换成四元数
-//        tf2::Quaternion qtn;
-//        qtn.setRPY(0,0,th);
-//        map2odom.transform.rotation.x = qtn.getX();
-//        map2odom.transform.rotation.y = qtn.getY();
-//        map2odom.transform.rotation.z = qtn.getZ();
-//        map2odom.transform.rotation.w = qtn.getW();
-//
-//        odom_broadcaster.sendTransform(map2odom);
+        if(spinMode){
+            geometry_msgs::TransformStamped gimbal_to_base_trans_;
+            gimbal_to_base_trans_.header.stamp = time;
+            gimbal_to_base_trans_.header.frame_id = gimbal_frame_;
+            gimbal_to_base_trans_.child_frame_id = "base_link";
+            gimbal_to_base_trans_.transform.translation.x = x;
+            gimbal_to_base_trans_.transform.translation.y = y;
+            gimbal_to_base_trans_.transform.translation.z = 0.0;
+            tf2::Quaternion qtn;
+            //暂定以odom作为云台坐标系
+            qtn.setRPY(0,0,th);
+            yaw = th;
+            gimbal_to_base_trans_.transform.rotation.x = qtn.getX();
+            gimbal_to_base_trans_.transform.rotation.y = qtn.getY();
+            gimbal_to_base_trans_.transform.rotation.z = qtn.getZ();
+            gimbal_to_base_trans_.transform.rotation.w = qtn.getW();
 
-        // 创建坐标转换
-        geometry_msgs::TransformStamped odom2base_link;
-        //----设置头信息
-        //odom_ts.header.seq = 100;
-        odom2base_link.header.stamp = time;
-        odom2base_link.header.frame_id = "odom";
-        //----设置子级坐标系
-        odom2base_link.child_frame_id = "base_link";
-        //----设置子级相对于父级的偏移量
-        odom2base_link.transform.translation.x = x;
-        odom2base_link.transform.translation.y = y;
-        odom2base_link.transform.translation.z = 0.0;
-//        //----设置四元数:将 欧拉角数据转换成四元数
-        tf2::Quaternion qtn;
-        qtn.setRPY(0,0,th);
-        odom2base_link.transform.rotation.x = qtn.getX();
-        odom2base_link.transform.rotation.y = qtn.getY();
-        odom2base_link.transform.rotation.z = qtn.getZ();
-        odom2base_link.transform.rotation.w = qtn.getW();
+            odom_broadcaster.sendTransform(gimbal_to_base_trans_);
+        } else {
+            //创建坐标转换
+            geometry_msgs::TransformStamped odom2base_link;
+            //设置头信息
+            //odom_ts.header.seq = 100;
+            odom2base_link.header.stamp = time;
+            odom2base_link.header.frame_id = "odom";
+            //设置子级坐标系
+            odom2base_link.child_frame_id = "base_link";
+            //设置子级相对于父级的偏移量
+            odom2base_link.transform.translation.x = x;
+            odom2base_link.transform.translation.y = y;
+            odom2base_link.transform.translation.z = 0.0;
+            //设置四元数:将 欧拉角数据转换成四元数
+            tf2::Quaternion qtn;
+            qtn.setRPY(0, 0, th);
+            odom2base_link.transform.rotation.x = qtn.getX();
+            odom2base_link.transform.rotation.y = qtn.getY();
+            odom2base_link.transform.rotation.z = qtn.getZ();
+            odom2base_link.transform.rotation.w = qtn.getW();
 
-        odom_broadcaster.sendTransform(odom2base_link);
-
-        // 发布 Odometry 消息
+            odom_broadcaster.sendTransform(odom2base_link);
+        }
+        //发布Odometry消息
         nav_msgs::Odometry odom;
         odom.header.stamp = time;
         odom.header.frame_id = "odom";
@@ -342,11 +330,10 @@ bool SentryChassisController::init(hardware_interface::EffortJointInterface *eff
   controller_nh.getParam("wheel_track", wheel_track_);
   controller_nh.getParam("wheel_base", wheel_base_);
   controller_nh.getParam("wheel_radius", wheel_radius_);
+  controller_nh.getParam("cmd_vel_timeout", cmd_vel_timeout_);
   controller_nh.getParam("odomMode", odomMode);
-//  controller_nh.getParam("left_front_pivot_offset", left_front_pivot_offset_);
-//  controller_nh.getParam("right_front_pivot_offset", right_front_pivot_offset_);
-//  controller_nh.getParam("left_back_pivot_offset", left_back_pivot_offset_);
-//  controller_nh.getParam("right_back_pivot_offset", right_back_pivot_offset_);
+  controller_nh.getParam("spinMode", spinMode);
+  controller_nh.getParam("lockMode", lockMode);
 
   rx = wheel_base_ / 2.0;
   ry = wheel_track_ / 2.0;
@@ -371,13 +358,15 @@ bool SentryChassisController::init(hardware_interface::EffortJointInterface *eff
   cbType = boost::bind(&SentryChassisController::cb,this,_1,_2);
   server->setCallback(cbType);
 
-//  listener = std::make_shared<tf2_ros::TransformListener>(buffer);
-
+  gimbal_frame_ = "odom";
 
   return true;
 }
 
 void SentryChassisController::update(const ros::Time &time, const ros::Duration &period) {
+    if(lockMode) {
+        lock_chassis(time);
+    }
     computeWheelEfforts(time, period);
     odom_update(time, period);
 }
