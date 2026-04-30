@@ -15,7 +15,7 @@ The source code is released under a [BSD 3-Clause license](LICENSE).
 Affiliation: GDUT()<br />
 Maintainer: cqincat, 2891343933@qq.com**
 
-The simple_chassis_controller package has been tested under [ROS] Noetic on respectively 18.04 and 20.04. This is
+The sentry_chassis_controller package has been tested under [ROS] Noetic on respectively 18.04 and 20.04. This is
 research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
 ## Installation
@@ -47,17 +47,16 @@ using
 
 Run the simulation and controller with:
 
-	roslaunch simple_chassis_controller run_simulation_and_controller.launch
+	roslaunch sentry_chassis_controller run_simulation_and_controller.launch
 
 ## Config files
 
-### Config folder /cfg
-
-- **PID.cfg**   Configuration file for PID parameters.
-
 ### Config folder /config
 
-- **controllers.yaml**   Params of sentry_chassis_controller and joint_state_controller.
+- **controllers.yaml**   Controller params, including dual-loop pivot PID:
+	- `left_*_pivot/pid_pos`: outer position loop
+	- `left_*_pivot/pid_vel/pid`: inner velocity loop
+	- `*_wheel/pid`: wheel velocity loop
 
 ## Launch files
 

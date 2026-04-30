@@ -1,12 +1,23 @@
 <launch>
+  <arg name="use_ekf" default="false"/>
+
   <include file="$(find rm_description)/launch/sentry.launch">
     <arg name="load_chassis" value="true"/>
+    <arg name="load_gimbal" value="false"/>
+    <arg name="load_shooter" value="false"/>
+    <arg name="load_arm" value="false"/>
     <arg name="roller_type" value="realistic"/>
-    <arg name="paused" value="true"/>
   </include>
 
+  <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
+
+  <!-- 把robot_description中的URDF加载到Gazebo -->
+  <node name="spawn_sentry" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-urdf -param robot_description -model sentry"/>
+
   <rosparam file="$(find sentry_chassis_controller)/config/controllers.yaml" command="load"/>
-  <!-- load the controllers -->
+
+  <!-- 加载控制器 -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
         output="screen" args="
         controller/sentry_chassis_controller
@@ -15,4 +26,9 @@
 
   <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard" output="screen"/>
 
+  <group if="$(arg use_ekf)">
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" output="screen" clear_params="true">
+      <rosparam command="load" file="$(find sentry_chassis_controller)/config/ekf_odom.yaml"/>
+    </node>
+  </group>
 </launch>

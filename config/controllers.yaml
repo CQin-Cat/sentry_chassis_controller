@@ -8,11 +8,49 @@ controller:
     wheel_track: 0.362
     wheel_base: 0.362
     wheel_radius: 0.055
-    cmd_vel_timeout: 0.5
-#    left_front_pivot_offset:  2.340
-#    right_front_pivot_offset: -0.285
-#    left_back_pivot_offset: -0.259
-#    right_back_pivot_offset: 2.330
+    cmd_vel_timeout: 3.0
+    cmd_accel_x: 4.0
+    cmd_accel_y: 4.0
+    cmd_accel_w: 12.0
+
+    left_front_pivot:
+      pid_pos: {p: 180.0, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true}
+      pid_vel: {p: 1.45, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true}
+    right_front_pivot:
+      pid_pos: {p: 180.0, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true}
+      pid_vel: {p: 1.45, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true}
+    left_back_pivot:
+      pid_pos: {p: 180.0, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true}
+      pid_vel: {p: 1.45, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true}
+    right_back_pivot:
+      pid_pos: {p: 180.0, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true}
+      pid_vel: {p: 1.45, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true}
+
+    left_front_wheel:
+      joint: left_front_wheel_joint
+      pid: {p: 1.25, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true}
+    right_front_wheel:
+      joint: right_front_wheel_joint
+      pid: {p: 1.25, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true}
+    left_back_wheel:
+      joint: left_back_wheel_joint
+      pid: {p: 1.25, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true}
+    right_back_wheel:
+      joint: right_back_wheel_joint
+      pid: {p: 1.25, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true}
+
+    debug_state_pub_rate: 100
+    pivot_sine:
+      enabled: false
+      amplitude: 0.5
+      frequency: 0.1
+      bias: 0.0
+    
+    wheel_sine:
+      enabled: true #注意不要和 pivot_sine 同时打开，否则会叠加在一起
+      amplitude: 5.0
+      frequency: 0.1
+      bias: 0.0
 
   joint_state_controller:
     type: joint_state_controller/JointStateController

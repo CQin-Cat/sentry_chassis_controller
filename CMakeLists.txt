@@ -21,19 +21,15 @@ find_package(catkin REQUIRED
     control_toolbox
     geometry_msgs
     angles
-    dynamic_reconfigure
     std_msgs
     nav_msgs
+    realtime_tools
     tf2
     tf
     tf2_ros
     )
 
 find_package(Eigen3 REQUIRED)
-
-generate_dynamic_reconfigure_options(
-    cfg/PID.cfg
-)
 
 ###################################
 ## catkin specific configuration ##
@@ -75,7 +71,8 @@ include_directories(
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
     src/sentry_chassis_controller.cpp
-    )
+    src/pivot_wheel_tuning.cpp
+)
 
 add_dependencies(${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
